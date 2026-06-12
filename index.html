@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>مدرب التمارين المتكامل - أيام قابلة للطي</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Poppins', system-ui, 'Cairo', sans-serif;
+        }
+        body {
+            background: #0a0a0a;
+            background-image: radial-gradient(circle at 10% 20%, rgba(0, 255, 65, 0.02) 0%, #0a0a0a 90%);
+            color: #e0e0e0;
+            padding: 2rem 1.5rem;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .hero { text-align: center; margin-bottom: 2rem; border-bottom: 1px solid #2a2a2a; padding-bottom: 1.2rem; }
+        .hero h1 { font-size: 2.5rem; background: linear-gradient(135deg, #c0ffb0, #4cff50); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .btn-start {
+            background: transparent; border: 2px solid #4cff50; color: #4cff50; padding: 12px 32px; font-size: 1.4rem;
+            font-weight: bold; border-radius: 60px; cursor: pointer; margin: 0 auto 2rem auto; display: flex;
+            align-items: center; gap: 12px; width: fit-content; transition: 0.2s;
+        }
+        .btn-start:hover { background: #4cff5022; box-shadow: 0 0 12px #4cff5077; }
+        .days-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); gap: 1.5rem; margin: 1.5rem 0; }
+        .day-card {
+            background: #111111dd; backdrop-filter: blur(4px); border: 1px solid #2c2c2c; border-radius: 28px;
+            padding: 1rem; transition: 0.2s;
+        }
+        .day-card:hover { border-color: #4cff5066; }
+        .day-header {
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+            gap: 10px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px dashed #2a2a2a;
+        }
+        .day-name { font-size: 1.4rem; font-weight: 800; background: linear-gradient(145deg, #e8ffe5, #b3ffb0); -webkit-background-clip: text; background-clip: text; color: transparent; display: flex; align-items: center; gap: 8px; }
+        .collapse-btn { background: none; border: none; color: #4cff50; cursor: pointer; font-size: 1.2rem; transition: 0.2s; width: 30px; }
+        .weight-input { background: #1e1e1e; border: 1px solid #3a3a3a; border-radius: 40px; padding: 6px 12px; width: 95px; color: #d0ffd0; text-align: center; }
+        .mode-select { background: #1c1c1c; border: 1px solid #4cff5080; border-radius: 30px; padding: 5px 12px; color: #bbffbb; font-weight: bold; cursor: pointer; }
+        .exercises-area { margin-top: 12px; transition: 0.2s; }
+        .exercises-area.collapsed { display: none; }
+        /* صف التمرين الأفقي الصغير */
+        .exercise-row {
+            background: #0c0c0c; border-radius: 20px; padding: 8px 12px; margin-bottom: 12px;
+            display: grid; grid-template-columns: 1.5fr 0.8fr 0.8fr 2fr auto;
+            align-items: center; gap: 8px; border-right: 3px solid #4cff50;
+        }
+        .exercise-row input, .exercise-row select {
+            background: #1f1f1f; border: 1px solid #333; border-radius: 20px; padding: 6px 8px;
+            color: #eef; font-size: 0.8rem; width: 100%;
+        }
+        .ex-sets-select { background: #1f1f1f; }
+        .reps-container { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+        .reps-container .reps-field { background: #2a2a2a; border-radius: 18px; padding: 4px 6px; width: 55px; text-align: center; border: 1px solid #4cff5066; font-size: 0.75rem; }
+        .del-exercise { background: none; border: none; color: #ff7b72; font-size: 1.1rem; cursor: pointer; justify-self: center; }
+        .add-exercise-btn { background: #1f2a1f; border: 1px dashed #4cff50; border-radius: 40px; padding: 6px 12px; margin-top: 8px; color: #b3ffb0; font-weight: bold; cursor: pointer; width: 100%; }
+        .rest-message { background: #1b1b1b; border-radius: 24px; padding: 14px; text-align: center; color: #88ff88; font-weight: bold; }
+        
+        /* مستطيلات التطور */
+        .stats-container { display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 2rem; }
+        .stat-card { flex: 1; min-width: 280px; background: #0e0e0e; border-radius: 32px; border: 1px solid #4cff5033; overflow: hidden; }
+        .stat-header {
+            background: #121212; padding: 1rem 1.5rem; display: flex; justify-content: space-between;
+            align-items: center; flex-wrap: wrap; cursor: pointer; font-weight: bold; font-size: 1.2rem;
+            border-bottom: 1px solid #2c2c2c;
+        }
+        .stat-content { padding: 1.2rem; display: none; }
+        .stat-content.show { display: block; }
+        .week-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+        .week-badge { background: #1f2a1f; padding: 5px 12px; border-radius: 30px; font-size: 0.8rem; cursor: pointer; border: 1px solid #4cff5040; transition: 0.1s; }
+        .week-badge:hover { background: #2f4a2f; }
+        .compare-btn { background: #2a3a2a; border: none; color: #c0ffb0; padding: 8px 16px; border-radius: 40px; cursor: pointer; margin: 10px 0; }
+        .comparison-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; direction: ltr; margin-top: 10px; }
+        .comparison-table th, .comparison-table td { padding: 8px 5px; border-bottom: 1px solid #2a2a2a; text-align: center; }
+        .improve-up { color: #8eff8e; }
+        .improve-down { color: #ffaa99; }
+        .action-bar { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 15px; margin: 20px 0; }
+        .reset-btn, .save-week-btn { background: #1e1e2a; border: 1px solid; padding: 10px 22px; border-radius: 40px; font-weight: bold; cursor: pointer; }
+        .reset-btn { border-color: #ff8a7a; color: #ffae9e; }
+        .save-week-btn { border-color: #4cff50; color: #b3ffb0; }
+        .footer { text-align: center; margin-top: 30px; font-size: 0.75rem; color: #3e3e3e; }
+        .modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85);
+            display: flex; justify-content: center; align-items: center; z-index: 10000;
+        }
+        .modal-content {
+            background: #1a1a1a; border-radius: 28px; padding: 1.5rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;
+            border: 1px solid #4cff50;
+        }
+        @media (max-width: 700px) {
+            .exercise-row { grid-template-columns: 1fr; gap: 6px; }
+            .reps-container { justify-content: flex-start; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="hero"><h1><i class="fas fa-dumbbell"></i> مدرب النادي الذكي</h1><p>سجل تمارينك، أوزانك، جولاتك وعداتك | أيام قابلة للطي</p></div>
+    <button id="trainBtn" class="btn-start"><i class="fas fa-play-circle"></i> 🏋️ تمرن</button>
+    <div id="daysContainer" class="days-grid"></div>
+    <div class="action-bar">
+        <button id="saveWeekBtn" class="save-week-btn"><i class="fas fa-save"></i> حفظ الأسبوع الحالي</button>
+        <button id="globalResetBtn" class="reset-btn"><i class="fas fa-trash-alt"></i> إعادة ضبط الكل</button>
+    </div>
+
+    <div class="stats-container">
+        <div class="stat-card" id="weightStatCard">
+            <div class="stat-header" id="weightHeader"><span><i class="fas fa-weight-scale"></i> ⚖️ تطور وزن الجسم</span><i class="fas fa-chevron-down"></i></div>
+            <div class="stat-content" id="weightContent"><div id="weightEvolutionDetails">اضغط هنا لعرض تطور وزنك</div></div>
+        </div>
+        <div class="stat-card" id="exerciseStatCard">
+            <div class="stat-header" id="exerciseHeader"><span><i class="fas fa-chart-simple"></i> 📈 التطور الأسبوعي</span><i class="fas fa-chevron-down"></i></div>
+            <div class="stat-content" id="exerciseContent">
+                <div><button id="compareWeeksBtn" class="compare-btn"><i class="fas fa-chart-gantt"></i> مقارنة الأسابيع</button></div>
+                <div id="savedWeeksList" class="week-buttons"></div>
+                <div id="exerciseEvolutionDetails">احفظ أسابيع ثم اختر أسبوعاً أو قارن</div>
+            </div>
+        </div>
+    </div>
+    <div class="footer"><i class="fas fa-database"></i> حفظ تلقائي | اضغط على السهم بجانب اسم اليوم لإغلاق/فتح التمارين</div>
+</div>
+
+<script>
+    // ------------------- الثوابت والهياكل -------------------
+    const DAYS_NAMES = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+    const COLLAPSE_KEY = "DayCollapseState";
+    
+    function createEmptyExercise() {
+        return { id: Date.now() + Math.random() * 10000, name: "", weightLifted: 0, sets: 1, repsPerSet: [0] };
+    }
+    function getDefaultDay(dayName) {
+        return { dayName, weight: "", mode: "exercise", exercises: [] };
+    }
+    function getDefaultWeek() { return DAYS_NAMES.map(d => getDefaultDay(d)); }
+
+    // ------------------- التخزين -------------------
+    const STORAGE_CURRENT = "Gym_CurrentWeek_Final";
+    const STORAGE_SAVED_WEEKS = "Gym_SavedWeeks_Final";
+    let currentWeek = null;
+    let isVisible = false;
+    let savedWeeks = [];
+    let collapseState = {}; // key: index يوم -> true (مغلق) / false (مفتوح)
+
+    // تحميل حالة الطي
+    function loadCollapseState() {
+        const saved = localStorage.getItem(COLLAPSE_KEY);
+        if(saved) collapseState = JSON.parse(saved);
+        else collapseState = {};
+    }
+    function saveCollapseState() {
+        localStorage.setItem(COLLAPSE_KEY, JSON.stringify(collapseState));
+    }
+
+    const daysContainer = document.getElementById("daysContainer");
+    const trainBtn = document.getElementById("trainBtn");
+    const resetBtn = document.getElementById("globalResetBtn");
+    const saveWeekBtn = document.getElementById("saveWeekBtn");
+    const compareWeeksBtn = document.getElementById("compareWeeksBtn");
+    const weightEvolutionDiv = document.getElementById("weightEvolutionDetails");
+    const exerciseEvolutionDiv = document.getElementById("exerciseEvolutionDetails");
+    const savedWeeksListDiv = document.getElementById("savedWeeksList");
+
+    function saveCurrent() { if(currentWeek) localStorage.setItem(STORAGE_CURRENT, JSON.stringify(currentWeek)); }
+    function loadCurrent() {
+        const raw = localStorage.getItem(STORAGE_CURRENT);
+        if(raw) {
+            try {
+                let data = JSON.parse(raw);
+                if(Array.isArray(data) && data.length===7) {
+                    for(let i=0;i<7;i++) {
+                        if(!data[i].exercises) data[i].exercises=[];
+                        if(!data[i].mode) data[i].mode="exercise";
+                        if(data[i].weight===undefined) data[i].weight="";
+                        data[i].exercises = data[i].exercises.map(ex => {
+                            if(!ex.id) ex.id = Date.now()+Math.random();
+                            if(ex.sets===undefined) ex.sets = 1;
+                            if(!ex.repsPerSet || ex.repsPerSet.length !== ex.sets)
+                                ex.repsPerSet = new Array(ex.sets).fill(0);
+                            return ex;
+                        });
+                    }
+                    return data;
+                }
+            } catch(e) {}
+        }
+        return null;
+    }
+    function loadSavedWeeks() {
+        const raw = localStorage.getItem(STORAGE_SAVED_WEEKS);
+        savedWeeks = raw ? JSON.parse(raw) : [];
+        if(!Array.isArray(savedWeeks)) savedWeeks = [];
+        renderSavedButtons();
+    }
+    function saveSavedWeeks() { localStorage.setItem(STORAGE_SAVED_WEEKS, JSON.stringify(savedWeeks)); }
+    function renderSavedButtons() {
+        if(!savedWeeksListDiv) return;
+        savedWeeksListDiv.innerHTML = "";
+        if(savedWeeks.length === 0) {
+            savedWeeksListDiv.innerHTML = "<span style='color:#777'>لا توجد أسابيع محفوظة</span>";
+            return;
+        }
+        savedWeeks.forEach((week, idx) => {
+            const btn = document.createElement("span");
+            btn.className = "week-badge";
+            btn.textContent = week.weekName;
+            btn.onclick = () => showWeekData(week.weekData, week.weekName);
+            savedWeeksListDiv.appendChild(btn);
+        });
+    }
+
+    function showWeekData(weekData, weekName) {
+        let html = `<div style="direction:rtl"><h3>📋 ${weekName} (للقراءة فقط)</h3>`;
+        for(let i=0; i<DAYS_NAMES.length; i++) {
+            const day = weekData[i];
+            html += `<div style="margin-bottom:15px; border-bottom:1px solid #333; padding:8px 0;"><strong>${day.dayName}</strong> - وزن: ${day.weight || "—"} كجم - ${day.mode === "exercise" ? "🏋️ تمرين" : "🛌 استراحة"}`;
+            if(day.mode === "exercise" && day.exercises.length) {
+                html += `<div style="margin-top:5px; font-size:0.8rem;">`;
+                day.exercises.forEach(ex => {
+                    const totalReps = ex.repsPerSet ? ex.repsPerSet.reduce((a,b)=>a+b,0) : 0;
+                    html += `<div>▪️ ${ex.name || "بدون اسم"} | وزن: ${ex.weightLifted} | جولات: ${ex.sets} | إجمالي عدات: ${totalReps}</div>`;
+                });
+                html += `</div>`;
+            } else if(day.mode === "rest") html += `<div class="rest-message" style="margin-top:5px;">يوم استراحة</div>`;
+            html += `</div>`;
+        }
+        html += `<button id="closeModalBtn" style="margin-top:15px;">إغلاق</button></div>`;
+        const modal = document.createElement("div"); modal.className = "modal";
+        const content = document.createElement("div"); content.className = "modal-content";
+        content.innerHTML = html; modal.appendChild(content); document.body.appendChild(modal);
+        document.getElementById("closeModalBtn").onclick = () => modal.remove();
+    }
+
+    // ------------------- عرض الأسبوع الحالي مع زر الطي -------------------
+    function renderCurrentWeek() {
+        if(!currentWeek || !isVisible) { daysContainer.innerHTML = ""; return; }
+        daysContainer.innerHTML = "";
+        currentWeek.forEach((day, idx) => {
+            const card = document.createElement("div"); card.className = "day-card";
+            const header = document.createElement("div"); header.className = "day-header";
+            const nameSpan = document.createElement("span"); nameSpan.className = "day-name";
+            const collapseBtn = document.createElement("button"); collapseBtn.className = "collapse-btn";
+            const isCollapsed = collapseState[idx] === true;
+            collapseBtn.innerHTML = isCollapsed ? '<i class="fas fa-chevron-down"></i>' : '<i class="fas fa-chevron-up"></i>';
+            collapseBtn.onclick = (e) => {
+                e.stopPropagation();
+                collapseState[idx] = !collapseState[idx];
+                saveCollapseState();
+                renderCurrentWeek(); // إعادة رسم لتحديث حالة الطي
+            };
+            nameSpan.appendChild(collapseBtn);
+            nameSpan.appendChild(document.createTextNode(day.dayName));
+            header.appendChild(nameSpan);
+            const weightInput = document.createElement("input"); weightInput.type="number"; weightInput.step="0.1"; weightInput.className="weight-input"; weightInput.value = day.weight??'';
+            weightInput.placeholder="وزني كجم";
+            const modeSelect = document.createElement("select"); modeSelect.className="mode-select";
+            modeSelect.innerHTML = `<option value="exercise" ${day.mode==='exercise'?'selected':''}>🏋️ تمرين</option><option value="rest" ${day.mode==='rest'?'selected':''}>🛌 استراحة</option>`;
+            header.appendChild(weightInput); header.appendChild(modeSelect);
+            card.appendChild(header);
+            
+            const contentDiv = document.createElement("div"); contentDiv.className = "exercises-area";
+            if(isCollapsed) contentDiv.classList.add("collapsed");
+            
+            if(day.mode === "rest") {
+                contentDiv.innerHTML = `<div class="rest-message"><i class="fas fa-bed"></i> يوم استراحة</div>`;
+            } else {
+                const exList = document.createElement("div"); exList.className = "exercises-list";
+                day.exercises.forEach(ex => {
+                    const row = document.createElement("div"); row.className = "exercise-row";
+                    const nameInp = document.createElement("input"); nameInp.type="text"; nameInp.placeholder="اسم التمرين"; nameInp.value = ex.name||""; nameInp.className="ex-name";
+                    const weightInp = document.createElement("input"); weightInp.type="number"; weightInp.step="0.5"; weightInp.placeholder="الوزن"; weightInp.value = ex.weightLifted||0; weightInp.className="ex-weight";
+                    const setsSel = document.createElement("select"); setsSel.className="ex-sets-select";
+                    for(let s=1;s<=5;s++) { let opt=document.createElement("option"); opt.value=s; opt.textContent=s; if(s===ex.sets) opt.selected=true; setsSel.appendChild(opt); }
+                    const repsContainer = document.createElement("div"); repsContainer.className="reps-container";
+                    function buildReps(setsNum, curReps) {
+                        repsContainer.innerHTML = "";
+                        for(let i=0;i<setsNum;i++) {
+                            const rInp = document.createElement("input"); rInp.type="number"; rInp.step="1"; rInp.placeholder=`ج${i+1}`; rInp.className="reps-field";
+                            rInp.value = (curReps && curReps[i]!==undefined) ? curReps[i] : 0;
+                            repsContainer.appendChild(rInp);
+                        }
+                    }
+                    buildReps(ex.sets, ex.repsPerSet);
+                    setsSel.onchange = (e) => {
+                        const newSets = parseInt(e.target.value);
+                        ex.sets = newSets;
+                        let newReps = [...(ex.repsPerSet||[])];
+                        if(newReps.length < newSets) while(newReps.length<newSets) newReps.push(0);
+                        else if(newReps.length > newSets) newReps = newReps.slice(0,newSets);
+                        ex.repsPerSet = newReps;
+                        buildReps(newSets, ex.repsPerSet);
+                        saveCurrent();
+                    };
+                    const delBtn = document.createElement("button"); delBtn.className="del-exercise"; delBtn.innerHTML='<i class="fas fa-trash-alt"></i>';
+                    row.append(nameInp, weightInp, setsSel, repsContainer, delBtn);
+                    nameInp.onchange = () => { ex.name = nameInp.value; saveCurrent(); };
+                    weightInp.onchange = () => { ex.weightLifted = parseFloat(weightInp.value)||0; saveCurrent(); };
+                    const attachReps = (cont, exObj) => {
+                        Array.from(cont.children).forEach((inp, idx) => {
+                            inp.onchange = () => { exObj.repsPerSet[idx] = parseInt(inp.value)||0; saveCurrent(); };
+                        });
+                    };
+                    attachReps(repsContainer, ex);
+                    delBtn.onclick = () => {
+                        day.exercises = day.exercises.filter(e => e.id !== ex.id);
+                        renderCurrentWeek();
+                        saveCurrent();
+                    };
+                    exList.appendChild(row);
+                });
+                contentDiv.appendChild(exList);
+                const addBtn = document.createElement("button"); addBtn.className="add-exercise-btn"; addBtn.innerHTML='<i class="fas fa-plus-circle"></i> + إضافة تمرين';
+                addBtn.onclick = () => {
+                    day.exercises.push(createEmptyExercise());
+                    renderCurrentWeek();
+                    saveCurrent();
+                };
+                contentDiv.appendChild(addBtn);
+            }
+            card.appendChild(contentDiv);
+            daysContainer.appendChild(card);
+        });
+        attachGlobalEvents();
+    }
+    
+    function attachGlobalEvents() {
+        const cards = document.querySelectorAll(".day-card");
+        cards.forEach((card, idx) => {
+            const weightInp = card.querySelector(".weight-input");
+            if(weightInp) weightInp.onchange = (e) => { currentWeek[idx].weight = e.target.value===""?"":parseFloat(e.target.value); saveCurrent(); updateWeightEvolution(); };
+            const modeSel = card.querySelector(".mode-select");
+            if(modeSel) modeSel.onchange = (e) => { currentWeek[idx].mode = e.target.value; saveCurrent(); renderCurrentWeek(); };
+        });
+    }
+
+    // ------------------- تطور الوزن -------------------
+    function updateWeightEvolution() {
+        if(savedWeeks.length === 0 && (!currentWeek || !currentWeek.some(d=>d.weight))) {
+            weightEvolutionDiv.innerHTML = "لا توجد بيانات وزن محفوظة.";
+            return;
+        }
+        let allWeeks = [...savedWeeks];
+        if(currentWeek) allWeeks.push({ weekName: "الأسبوع الحالي", weekData: currentWeek });
+        let html = `<table class="comparison-table"><thead><tr><th>اليوم</th>${allWeeks.map(w=>`<th>${w.weekName}</th>`).join('')}</tr></thead><tbody>`;
+        for(let dayIdx=0; dayIdx<DAYS_NAMES.length; dayIdx++) {
+            html += `<tr><td><strong>${DAYS_NAMES[dayIdx]}</strong></td>`;
+            for(let w of allWeeks) {
+                let val = w.weekData[dayIdx].weight;
+                let display = (val && val!=="") ? parseFloat(val).toFixed(1)+" كجم" : "—";
+                html += `<td>${display}</td>`;
+            }
+            html += `</tr>`;
+        }
+        html += `</tbody></table>`;
+        let weeksWithWeight = allWeeks.filter(w => w.weekData.some(d=>d.weight && d.weight!==""));
+        if(weeksWithWeight.length >= 2) {
+            let first = weeksWithWeight[0].weekData;
+            let last = weeksWithWeight[weeksWithWeight.length-1].weekData;
+            let changes = [];
+            for(let i=0;i<DAYS_NAMES.length;i++) {
+                let w1 = first[i].weight ? parseFloat(first[i].weight) : null;
+                let w2 = last[i].weight ? parseFloat(last[i].weight) : null;
+                if(w1 && w2) changes.push(w2 - w1);
+            }
+            if(changes.length) {
+                let avgChange = (changes.reduce((a,b)=>a+b,0)/changes.length).toFixed(1);
+                let trend = avgChange > 0 ? "▲ تحسن إيجابي" : (avgChange < 0 ? "▼ انخفاض" : "● ثبات");
+                html += `<div class="improve-up" style="margin-top:12px;">📊 متوسط تغير الوزن: ${avgChange} كجم | ${trend}</div>`;
+            }
+        }
+        weightEvolutionDiv.innerHTML = html;
+    }
+
+    // ------------------- مقارنة الأسابيع -------------------
+    function openCompareModal() {
+        if(savedWeeks.length === 0) { alert("لا توجد أسابيع محفوظة للمقارنة."); return; }
+        let modalHtml = `<div style="direction:rtl"><h3>اختر الأسابيع للمقارنة</h3><div><label><input type="checkbox" id="selectAllCompare"> تحديد الكل</label></div>`;
+        savedWeeks.forEach((w,idx) => {
+            modalHtml += `<div><label><input type="checkbox" class="week-cb" value="${idx}"> ${w.weekName}</label></div>`;
+        });
+        modalHtml += `<div style="margin-top:15px;"><button id="confirmCompareModal">مقارنة</button> <button id="closeCompareModal">إلغاء</button></div></div>`;
+        const modal = document.createElement("div"); modal.className = "modal";
+        const content = document.createElement("div"); content.className = "modal-content";
+        content.innerHTML = modalHtml; modal.appendChild(content); document.body.appendChild(modal);
+        const selectAll = content.querySelector("#selectAllCompare");
+        const checkboxes = () => content.querySelectorAll(".week-cb");
+        if(selectAll) selectAll.onchange = (e) => { checkboxes().forEach(cb => cb.checked = e.target.checked); };
+        content.querySelector("#confirmCompareModal").onclick = () => {
+            const selected = Array.from(checkboxes()).filter(cb=>cb.checked).map(cb=>parseInt(cb.value));
+            if(selected.length < 2) { alert("اختر أسبوعين على الأقل"); modal.remove(); return; }
+            generateExerciseComparison(selected.map(i => savedWeeks[i]));
+            modal.remove();
+        };
+        content.querySelector("#closeCompareModal").onclick = () => modal.remove();
+    }
+    function generateExerciseComparison(selectedWeeks) {
+        if(selectedWeeks.length < 2) return;
+        let html = `<div><strong>📊 مقارنة التمارين: ${selectedWeeks.map(w=>w.weekName).join(" - ")}</strong></div>`;
+        let allExMap = new Map();
+        for(let week of selectedWeeks) {
+            for(let day of week.weekData) {
+                if(day.mode === "exercise") {
+                    for(let ex of day.exercises) {
+                        if(ex.name && ex.name.trim()) {
+                            let key = ex.name.trim().toLowerCase();
+                            if(!allExMap.has(key)) allExMap.set(key, { name: ex.name, weeksData: [] });
+                        }
+                    }
+                }
+            }
+        }
+        for(let [key, exInfo] of allExMap.entries()) {
+            let stats = selectedWeeks.map(week => {
+                for(let day of week.weekData) {
+                    if(day.mode === "exercise") {
+                        let match = day.exercises.find(ex => ex.name && ex.name.trim().toLowerCase() === key);
+                        if(match) {
+                            let totalReps = match.repsPerSet ? match.repsPerSet.reduce((a,b)=>a+b,0) : 0;
+                            return { weight: match.weightLifted, sets: match.sets, totalReps };
+                        }
+                    }
+                }
+                return null;
+            });
+            let row = `<tr><td><strong>${exInfo.name}</strong></td>`;
+            for(let s of stats) {
+                if(s) row += `<td>${s.weight} كجم / ${s.sets} جولات / ${s.totalReps} عدة</td>`;
+                else row += `<td style="color:#777">—</td>`;
+            }
+            row += `</tr>`;
+            html += `<table class="comparison-table"><thead><tr><th>التمرين</th>${selectedWeeks.map(w=>`<th>${w.weekName}</th>`).join('')}</table></thead><tbody>${row}</tbody></table>`;
+        }
+        if(allExMap.size === 0) html += "<div>لا توجد تمارين مسجلة</div>";
+        exerciseEvolutionDiv.innerHTML = html;
+    }
+
+    // ------------------- حفظ الأسبوع الحالي -------------------
+    function saveCurrentWeek() {
+        if(!currentWeek) { alert("لا يوجد أسبوع نشط"); return; }
+        const copy = JSON.parse(JSON.stringify(currentWeek));
+        const weekNumber = savedWeeks.length + 1;
+        savedWeeks.push({ weekName: `الأسبوع ${weekNumber}`, weekData: copy });
+        saveSavedWeeks();
+        alert(`تم حفظ الأسبوع ${weekNumber}`);
+        renderSavedButtons();
+        updateWeightEvolution();
+    }
+
+    function fullReset() {
+        if(confirm("مسح كل البيانات؟")) {
+            currentWeek = getDefaultWeek();
+            saveCurrent();
+            savedWeeks = [];
+            saveSavedWeeks();
+            collapseState = {};
+            saveCollapseState();
+            isVisible = true;
+            renderCurrentWeek();
+            renderSavedButtons();
+            updateWeightEvolution();
+            exerciseEvolutionDiv.innerHTML = "تم إعادة الضبط";
+        }
+    }
+
+    function handleTrain() {
+        if(!currentWeek) { currentWeek = getDefaultWeek(); saveCurrent(); }
+        isVisible = true;
+        renderCurrentWeek();
+        updateWeightEvolution();
+    }
+
+    function setupPanels() {
+        const wHeader = document.getElementById("weightHeader");
+        const wCont = document.querySelector("#weightStatCard .stat-content");
+        const eHeader = document.getElementById("exerciseHeader");
+        const eCont = document.querySelector("#exerciseStatCard .stat-content");
+        wHeader.onclick = () => { wCont.classList.toggle("show"); if(wCont.classList.contains("show")) updateWeightEvolution(); };
+        eHeader.onclick = () => { eCont.classList.toggle("show"); };
+        wCont.classList.add("show"); eCont.classList.add("show");
+    }
+
+    function init() {
+        loadCollapseState();
+        const loaded = loadCurrent();
+        if(loaded) { currentWeek = loaded; isVisible = true; renderCurrentWeek(); }
+        else { currentWeek = null; isVisible = false; daysContainer.innerHTML = ""; }
+        loadSavedWeeks();
+        setupPanels();
+        trainBtn.onclick = handleTrain;
+        resetBtn.onclick = fullReset;
+        saveWeekBtn.onclick = saveCurrentWeek;
+        compareWeeksBtn.onclick = openCompareModal;
+        if(savedWeeks.length) updateWeightEvolution();
+    }
+    init();
+</script>
+</body>
+</html>
