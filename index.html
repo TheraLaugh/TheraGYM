@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>مدرب التمارين المتكامل - أيام قابلة للطي</title>
-    <!-- إضافة مكتبة localforage للتخزين الأكبر -->
+    <!-- مكتبة localforage للتخزين الأكبر -->
     <script src="https://cdn.jsdelivr.net/npm/localforage/dist/localforage.min.js"></script>
+    <!-- مكتبات QR -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* كل الستايل كما هو لم يتغير */
+        /* جميع الستايلات السابقة مع إضافة تنسيق زر الإعدادات */
         * {
             margin: 0;
             padding: 0;
@@ -21,9 +24,36 @@
             color: #e0e0e0;
             padding: 2rem 1.5rem;
         }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .hero { text-align: center; margin-bottom: 2rem; border-bottom: 1px solid #2a2a2a; padding-bottom: 1.2rem; }
+        .container { max-width: 1400px; margin: 0 auto; position: relative; }
+        .hero {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #2a2a2a;
+            padding-bottom: 1.2rem;
+            position: relative;
+        }
         .hero h1 { font-size: 2.5rem; background: linear-gradient(135deg, #c0ffb0, #4cff50); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .settings-btn {
+            position: absolute;
+            top: 0;
+            left: 0; /* لأن الاتجاه rtl */
+            background: #1e1e2a;
+            border: 1px solid #4cff50;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.4rem;
+            color: #b3ffb0;
+            transition: 0.2s;
+        }
+        .settings-btn:hover {
+            background: #2a3a2a;
+            transform: rotate(30deg);
+        }
         .btn-start {
             background: transparent; border: 2px solid #4cff50; color: #4cff50; padding: 12px 32px; font-size: 1.4rem;
             font-weight: bold; border-radius: 60px; cursor: pointer; margin: 0 auto 2rem auto; display: flex;
@@ -46,7 +76,6 @@
         .mode-select { background: #1c1c1c; border: 1px solid #4cff5080; border-radius: 30px; padding: 5px 12px; color: #bbffbb; font-weight: bold; cursor: pointer; }
         .exercises-area { margin-top: 12px; transition: 0.2s; }
         .exercises-area.collapsed { display: none; }
-        /* صف التمرين الأفقي الصغير */
         .exercise-row {
             background: #0c0c0c; border-radius: 20px; padding: 8px 12px; margin-bottom: 12px;
             display: grid; grid-template-columns: 1.5fr 0.8fr 0.8fr 2fr auto;
@@ -63,7 +92,6 @@
         .add-exercise-btn { background: #1f2a1f; border: 1px dashed #4cff50; border-radius: 40px; padding: 6px 12px; margin-top: 8px; color: #b3ffb0; font-weight: bold; cursor: pointer; width: 100%; }
         .rest-message { background: #1b1b1b; border-radius: 24px; padding: 14px; text-align: center; color: #88ff88; font-weight: bold; }
         
-        /* مستطيلات التطور */
         .stats-container { display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 2rem; }
         .stat-card { flex: 1; min-width: 280px; background: #0e0e0e; border-radius: 32px; border: 1px solid #4cff5033; overflow: hidden; }
         .stat-header {
@@ -94,6 +122,23 @@
             background: #1a1a1a; border-radius: 28px; padding: 1.5rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;
             border: 1px solid #4cff50;
         }
+        .qr-container {
+            text-align: center;
+            margin: 15px 0;
+            background: white;
+            display: inline-block;
+            padding: 10px;
+            border-radius: 16px;
+        }
+        .camera-container {
+            margin-top: 20px;
+            text-align: center;
+        }
+        #qr-reader {
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
         @media (max-width: 700px) {
             .exercise-row { grid-template-columns: 1fr; gap: 6px; }
             .reps-container { justify-content: flex-start; }
@@ -102,7 +147,11 @@
 </head>
 <body>
 <div class="container">
-    <div class="hero"><h1><i class="fas fa-dumbbell"></i> مدرب النادي الذكي</h1><p>سجل تمارينك، أوزانك، جولاتك وعداتك | أيام قابلة للطي</p></div>
+    <div class="hero">
+        <div id="settingsBtn" class="settings-btn"><i class="fas fa-cog"></i></div>
+        <h1><i class="fas fa-dumbbell"></i> مدرب النادي الذكي</h1>
+        <p>سجل تمارينك، أوزانك، جولاتك وعداتك | أيام قابلة للطي</p>
+    </div>
     <button id="trainBtn" class="btn-start"><i class="fas fa-play-circle"></i> 🏋️ تمرن</button>
     <div id="daysContainer" class="days-grid"></div>
     <div class="action-bar">
@@ -147,7 +196,7 @@
     }
     function getDefaultWeek() { return DAYS_NAMES.map(d => getDefaultDay(d)); }
 
-    // ------------------- التخزين باستخدام localforage -------------------
+    // ------------------- التخزين -------------------
     const STORAGE_CURRENT = "Gym_CurrentWeek_Final";
     const STORAGE_SAVED_WEEKS = "Gym_SavedWeeks_Final";
     let currentWeek = null;
@@ -155,7 +204,6 @@
     let savedWeeks = [];
     let collapseState = {};
 
-    // دوال التخزين غير المتزامنة
     async function saveCurrent() { if(currentWeek) await localforage.setItem(STORAGE_CURRENT, currentWeek); }
     async function loadCurrent() {
         try {
@@ -197,6 +245,7 @@
     }
     async function saveCollapseState() { await localforage.setItem(COLLAPSE_KEY, collapseState); }
 
+    // دوال العرض
     const daysContainer = document.getElementById("daysContainer");
     const trainBtn = document.getElementById("trainBtn");
     const resetBtn = document.getElementById("globalResetBtn");
@@ -205,6 +254,7 @@
     const weightEvolutionDiv = document.getElementById("weightEvolutionDetails");
     const exerciseEvolutionDiv = document.getElementById("exerciseEvolutionDetails");
     const savedWeeksListDiv = document.getElementById("savedWeeksList");
+    const settingsBtn = document.getElementById("settingsBtn");
 
     function renderSavedButtons() {
         if(!savedWeeksListDiv) return;
@@ -244,7 +294,6 @@
         document.getElementById("closeModalBtn").onclick = () => modal.remove();
     }
 
-    // ------------------- عرض الأسبوع الحالي -------------------
     function renderCurrentWeek() {
         if(!currentWeek || !isVisible) { daysContainer.innerHTML = ""; return; }
         daysContainer.innerHTML = "";
@@ -346,7 +395,6 @@
         });
     }
 
-    // ------------------- تطور الوزن -------------------
     function updateWeightEvolution() {
         if(savedWeeks.length === 0 && (!currentWeek || !currentWeek.some(d=>d.weight))) {
             weightEvolutionDiv.innerHTML = "لا توجد بيانات وزن محفوظة.";
@@ -364,7 +412,7 @@
             }
             html += `</tr>`;
         }
-        html += `</tbody></tr>`;
+        html += `</tbody></table>`;
         let weeksWithWeight = allWeeks.filter(w => w.weekData.some(d=>d.weight && d.weight!==""));
         if(weeksWithWeight.length >= 2) {
             let first = weeksWithWeight[0].weekData;
@@ -384,7 +432,6 @@
         weightEvolutionDiv.innerHTML = html;
     }
 
-    // ------------------- مقارنة الأسابيع -------------------
     function openCompareModal() {
         if(savedWeeks.length === 0) { alert("لا توجد أسابيع محفوظة للمقارنة."); return; }
         let modalHtml = `<div style="direction:rtl"><h3>اختر الأسابيع للمقارنة</h3><div><label><input type="checkbox" id="selectAllCompare"> تحديد الكل</label></div>`;
@@ -447,7 +494,6 @@
         exerciseEvolutionDiv.innerHTML = html;
     }
 
-    // ------------------- حفظ الأسبوع الحالي -------------------
     async function saveCurrentWeek() {
         if(!currentWeek) { alert("لا يوجد أسبوع نشط"); return; }
         const copy = JSON.parse(JSON.stringify(currentWeek));
@@ -492,8 +538,131 @@
         wCont.classList.add("show"); eCont.classList.add("show");
     }
 
+    // ------------------- وظائف QR -------------------
+    async function exportToQR() {
+        // تجميع كل البيانات
+        const exportData = {
+            version: 1,
+            currentWeek: currentWeek,
+            savedWeeks: savedWeeks,
+            collapseState: collapseState
+        };
+        const jsonStr = JSON.stringify(exportData);
+        if (jsonStr.length > 1800) {
+            alert("البيانات كبيرة جداً (أكثر من 1800 حرف). قد لا يتسع رمز QR. حاول تقليل عدد الأسابيع المحفوظة.");
+            return;
+        }
+        // عرض نافذة بها QR
+        const modal = document.createElement("div"); modal.className = "modal";
+        const content = document.createElement("div"); content.className = "modal-content";
+        content.style.textAlign = "center";
+        content.innerHTML = `
+            <h3><i class="fas fa-qrcode"></i> رمز QR للبيانات</h3>
+            <div id="qrCodeContainer" class="qr-container"></div>
+            <p>امسح هذا الرمز من الجهاز الآخر لاستيراد البيانات</p>
+            <button id="closeQRModal">إغلاق</button>
+        `;
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+        // إنشاء QR
+        new QRCode(document.getElementById("qrCodeContainer"), {
+            text: jsonStr,
+            width: 200,
+            height: 200,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.L
+        });
+        document.getElementById("closeQRModal").onclick = () => modal.remove();
+    }
+
+    function importFromQR() {
+        const modal = document.createElement("div"); modal.className = "modal";
+        const content = document.createElement("div"); content.className = "modal-content";
+        content.innerHTML = `
+            <h3><i class="fas fa-camera"></i> مسح رمز QR</h3>
+            <div id="qr-reader" style="width:100%; max-width:400px; margin:auto;"></div>
+            <div id="qr-reader-results" style="margin-top:10px;"></div>
+            <button id="stopScanBtn" style="margin-top:15px;">إيقاف المسح</button>
+            <button id="closeScanModal">إلغاء</button>
+        `;
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+        
+        const html5QrCode = new Html5Qrcode("qr-reader");
+        const qrConfig = { fps: 10, qrbox: { width: 250, height: 250 } };
+        let scanning = true;
+        
+        html5QrCode.start({ facingMode: "environment" }, qrConfig, async (decodedText) => {
+            if (!scanning) return;
+            scanning = false;
+            await html5QrCode.stop();
+            try {
+                const imported = JSON.parse(decodedText);
+                if (imported.version === 1 && imported.currentWeek && imported.savedWeeks !== undefined && imported.collapseState !== undefined) {
+                    if (confirm("سيتم استبدال جميع البيانات الحالية بالبيانات المستوردة. هل أنت متأكد؟")) {
+                        currentWeek = imported.currentWeek;
+                        savedWeeks = imported.savedWeeks;
+                        collapseState = imported.collapseState;
+                        await saveCurrent();
+                        await saveSavedWeeks();
+                        await saveCollapseState();
+                        isVisible = true;
+                        renderCurrentWeek();
+                        renderSavedButtons();
+                        updateWeightEvolution();
+                        alert("تم استيراد البيانات بنجاح!");
+                        modal.remove();
+                    } else {
+                        modal.remove();
+                    }
+                } else {
+                    alert("البيانات غير صالحة أو غير متوافقة مع هذا التطبيق.");
+                    modal.remove();
+                }
+            } catch(e) {
+                alert("فشل قراءة البيانات: " + e.message);
+                modal.remove();
+            }
+        }, (error) => {
+            // تجاهل أخطاء المسح العادية
+        });
+        
+        document.getElementById("stopScanBtn").onclick = () => {
+            if (html5QrCode.isScanning) html5QrCode.stop();
+            modal.remove();
+        };
+        document.getElementById("closeScanModal").onclick = () => {
+            if (html5QrCode.isScanning) html5QrCode.stop();
+            modal.remove();
+        };
+    }
+
+    function openSettingsModal() {
+        const modal = document.createElement("div"); modal.className = "modal";
+        const content = document.createElement("div"); content.className = "modal-content";
+        content.innerHTML = `
+            <h3><i class="fas fa-sliders-h"></i> الإعدادات</h3>
+            <div style="display: flex; flex-direction: column; gap: 15px; margin: 20px 0;">
+                <button id="exportQRBtn" style="background:#2a3a2a; border:none; padding:10px; border-radius:40px; color:#b3ffb0; cursor:pointer;">
+                    <i class="fas fa-download"></i> تصدير البيانات إلى QR
+                </button>
+                <button id="importQRBtn" style="background:#2a3a2a; border:none; padding:10px; border-radius:40px; color:#b3ffb0; cursor:pointer;">
+                    <i class="fas fa-upload"></i> استيراد البيانات من QR (مسح)
+                </button>
+            </div>
+            <button id="closeSettingsBtn">إغلاق</button>
+        `;
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+        document.getElementById("exportQRBtn").onclick = () => { modal.remove(); exportToQR(); };
+        document.getElementById("importQRBtn").onclick = () => { modal.remove(); importFromQR(); };
+        document.getElementById("closeSettingsBtn").onclick = () => modal.remove();
+    }
+
+    // ------------------- بدء التشغيل -------------------
     async function init() {
-        // طلب التخزين الدائم (persistent storage) إن أمكن
+        // طلب التخزين الدائم
         if (navigator.storage && navigator.storage.persist) {
             const isPersisted = await navigator.storage.persisted();
             if (!isPersisted) {
@@ -512,6 +681,7 @@
         resetBtn.onclick = fullReset;
         saveWeekBtn.onclick = saveCurrentWeek;
         compareWeeksBtn.onclick = openCompareModal;
+        settingsBtn.onclick = openSettingsModal;
         if(savedWeeks.length) updateWeightEvolution();
     }
     init();
