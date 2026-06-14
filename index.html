@@ -11,7 +11,6 @@
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* جميع الستايلات السابقة مع إضافة تنسيق زر الإعدادات */
         * {
             margin: 0;
             padding: 0;
@@ -36,7 +35,7 @@
         .settings-btn {
             position: absolute;
             top: 0;
-            left: 0; /* لأن الاتجاه rtl */
+            left: 0;
             background: #1e1e2a;
             border: 1px solid #4cff50;
             border-radius: 50%;
@@ -119,7 +118,7 @@
             display: flex; justify-content: center; align-items: center; z-index: 10000;
         }
         .modal-content {
-            background: #1a1a1a; border-radius: 28px; padding: 1.5rem; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;
+            background: #1a1a1a; border-radius: 28px; padding: 1.5rem; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto;
             border: 1px solid #4cff50;
         }
         .qr-container {
@@ -130,14 +129,48 @@
             padding: 10px;
             border-radius: 16px;
         }
-        .camera-container {
-            margin-top: 20px;
-            text-align: center;
-        }
-        #qr-reader {
+        .json-textarea {
             width: 100%;
-            max-width: 400px;
-            margin: 0 auto;
+            height: 250px;
+            background: #0a0a0a;
+            color: #b3ffb0;
+            border: 1px solid #4cff50;
+            border-radius: 16px;
+            padding: 12px;
+            font-family: monospace;
+            font-size: 0.7rem;
+            direction: ltr;
+            text-align: left;
+            resize: vertical;
+        }
+        .setting-buttons-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 15px 0;
+        }
+        .setting-btn {
+            background: #2a3a2a;
+            border: none;
+            padding: 12px;
+            border-radius: 40px;
+            color: #b3ffb0;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        .setting-btn:hover {
+            background: #3a5a3a;
+            transform: scale(1.02);
+        }
+        .danger-btn {
+            background: #3a2a2a;
+            border-color: #ff8a7a;
+            color: #ffae9e;
+        }
+        hr {
+            border-color: #2a2a2a;
+            margin: 10px 0;
         }
         @media (max-width: 700px) {
             .exercise-row { grid-template-columns: 1fr; gap: 6px; }
@@ -402,7 +435,7 @@
         }
         let allWeeks = [...savedWeeks];
         if(currentWeek) allWeeks.push({ weekName: "الأسبوع الحالي", weekData: currentWeek });
-        let html = `<table class="comparison-table"><thead><tr><th>اليوم</th>${allWeeks.map(w=>`<th>${w.weekName}</th>`).join('')}</table></thead><tbody>`;
+        let html = `<table class="comparison-table"><thead><tr><th>اليوم</th>${allWeeks.map(w=>`<th>${w.weekName}</th>`).join('')}</tr></thead><tbody>`;
         for(let dayIdx=0; dayIdx<DAYS_NAMES.length; dayIdx++) {
             html += `<tr><td><strong>${DAYS_NAMES[dayIdx]}</strong></td>`;
             for(let w of allWeeks) {
@@ -488,7 +521,7 @@
                 else row += `<td style="color:#777">—</td>`;
             }
             row += `</tr>`;
-            html += `<table class="comparison-table"><thead><tr><th>التمرين</th>${selectedWeeks.map(w=>`<th>${w.weekName}</th>`).join('')}</table></thead><tbody>${row}</tbody></table>`;
+            html += `<table class="comparison-table"><thead><tr><th>التمرين</th>${selectedWeeks.map(w=>`<th>${w.weekName}</th>`).join('')}</tr></thead><tbody>${row}</tbody></table>`;
         }
         if(allExMap.size === 0) html += "<div>لا توجد تمارين مسجلة</div>";
         exerciseEvolutionDiv.innerHTML = html;
@@ -538,9 +571,122 @@
         wCont.classList.add("show"); eCont.classList.add("show");
     }
 
+    // ------------------- وظائف JSON (النسخ واللصق) -------------------
+    async function exportToJSON() {
+        const exportData = {
+            version: 1,
+            currentWeek: currentWeek,
+            savedWeeks: savedWeeks,
+            collapseState: collapseState
+        };
+        const jsonStr = JSON.stringify(exportData, null, 2);
+        
+        // نسخ إلى الحافظة
+        try {
+            await navigator.clipboard.writeText(jsonStr);
+            alert("✅ تم نسخ البيانات إلى الحافظة بنجاح!\nيمكنك الآن لصقها في أي مكان.");
+        } catch(err) {
+            // في حال فشل النسخ التلقائي، نعرض النص في منطقة نصية
+            showJSONModal(jsonStr);
+        }
+    }
+    
+    function showJSONModal(jsonStr) {
+        const modal = document.createElement("div"); modal.className = "modal";
+        const content = document.createElement("div"); content.className = "modal-content";
+        content.innerHTML = `
+            <h3><i class="fas fa-code"></i> تصدير البيانات (JSON)</h3>
+            <textarea id="exportJsonText" class="json-textarea" readonly>${escapeHtml(jsonStr)}</textarea>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button id="copyJsonBtn" class="setting-btn" style="flex:1;"><i class="fas fa-copy"></i> نسخ إلى الحافظة</button>
+                <button id="closeExportModal" class="setting-btn danger-btn" style="flex:1;">إغلاق</button>
+            </div>
+        `;
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+        
+        document.getElementById("copyJsonBtn").onclick = async () => {
+            const textarea = document.getElementById("exportJsonText");
+            textarea.select();
+            await navigator.clipboard.writeText(textarea.value);
+            alert("تم نسخ النص!");
+        };
+        document.getElementById("closeExportModal").onclick = () => modal.remove();
+    }
+    
+    function importFromJSON() {
+        const modal = document.createElement("div"); modal.className = "modal";
+        const content = document.createElement("div"); content.className = "modal-content";
+        content.innerHTML = `
+            <h3><i class="fas fa-upload"></i> استيراد البيانات من JSON</h3>
+            <p style="font-size:0.8rem; margin-bottom:8px;">الصق النص (JSON) في الحقل أدناه:</p>
+            <textarea id="importJsonText" class="json-textarea" placeholder='{"version":1,"currentWeek":[...],"savedWeeks":[],"collapseState":{}}'></textarea>
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button id="pasteJsonBtn" class="setting-btn" style="flex:1;"><i class="fas fa-paste"></i> لصق</button>
+                <button id="importConfirmBtn" class="setting-btn" style="flex:1;"><i class="fas fa-check"></i> استيراد</button>
+                <button id="closeImportModal" class="setting-btn danger-btn" style="flex:1;">إلغاء</button>
+            </div>
+        `;
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+        
+        const textarea = document.getElementById("importJsonText");
+        
+        document.getElementById("pasteJsonBtn").onclick = async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                textarea.value = text;
+                alert("تم لصق النص من الحافظة");
+            } catch(err) {
+                alert("تعذر اللصق التلقائي. الرجاء لصق النص يدوياً (Ctrl+V)");
+            }
+        };
+        
+        document.getElementById("importConfirmBtn").onclick = async () => {
+            const jsonStr = textarea.value.trim();
+            if (!jsonStr) {
+                alert("الرجاء إدخال نص JSON");
+                return;
+            }
+            try {
+                const imported = JSON.parse(jsonStr);
+                if (imported.version === 1 && imported.currentWeek && imported.savedWeeks !== undefined && imported.collapseState !== undefined) {
+                    if (confirm("سيتم استبدال جميع البيانات الحالية بالبيانات المستوردة. هل أنت متأكد؟")) {
+                        currentWeek = imported.currentWeek;
+                        savedWeeks = imported.savedWeeks;
+                        collapseState = imported.collapseState;
+                        await saveCurrent();
+                        await saveSavedWeeks();
+                        await saveCollapseState();
+                        isVisible = true;
+                        renderCurrentWeek();
+                        renderSavedButtons();
+                        updateWeightEvolution();
+                        alert("✅ تم استيراد البيانات بنجاح!");
+                        modal.remove();
+                    }
+                } else {
+                    alert("❌ البيانات غير صالحة أو غير متوافقة مع هذا التطبيق.\nتأكد من أن النص يحتوي على version: 1, currentWeek, savedWeeks, collapseState");
+                }
+            } catch(e) {
+                alert("❌ فشل قراءة البيانات: " + e.message + "\nتأكد من أن النص بصيغة JSON صحيحة.");
+            }
+        };
+        
+        document.getElementById("closeImportModal").onclick = () => modal.remove();
+    }
+    
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
     // ------------------- وظائف QR -------------------
     async function exportToQR() {
-        // تجميع كل البيانات
         const exportData = {
             version: 1,
             currentWeek: currentWeek,
@@ -549,10 +695,9 @@
         };
         const jsonStr = JSON.stringify(exportData);
         if (jsonStr.length > 1800) {
-            alert("البيانات كبيرة جداً (أكثر من 1800 حرف). قد لا يتسع رمز QR. حاول تقليل عدد الأسابيع المحفوظة.");
+            alert("⚠️ البيانات كبيرة جداً (أكثر من 1800 حرف). قد لا يتسع رمز QR.\nاستخدم ميزة JSON بدلاً من ذلك.");
             return;
         }
-        // عرض نافذة بها QR
         const modal = document.createElement("div"); modal.className = "modal";
         const content = document.createElement("div"); content.className = "modal-content";
         content.style.textAlign = "center";
@@ -560,11 +705,10 @@
             <h3><i class="fas fa-qrcode"></i> رمز QR للبيانات</h3>
             <div id="qrCodeContainer" class="qr-container"></div>
             <p>امسح هذا الرمز من الجهاز الآخر لاستيراد البيانات</p>
-            <button id="closeQRModal">إغلاق</button>
+            <button id="closeQRModal" class="setting-btn">إغلاق</button>
         `;
         modal.appendChild(content);
         document.body.appendChild(modal);
-        // إنشاء QR
         new QRCode(document.getElementById("qrCodeContainer"), {
             text: jsonStr,
             width: 200,
@@ -582,9 +726,8 @@
         content.innerHTML = `
             <h3><i class="fas fa-camera"></i> مسح رمز QR</h3>
             <div id="qr-reader" style="width:100%; max-width:400px; margin:auto;"></div>
-            <div id="qr-reader-results" style="margin-top:10px;"></div>
-            <button id="stopScanBtn" style="margin-top:15px;">إيقاف المسح</button>
-            <button id="closeScanModal">إلغاء</button>
+            <button id="stopScanBtn" class="setting-btn" style="margin-top:15px;">إيقاف المسح</button>
+            <button id="closeScanModal" class="setting-btn danger-btn">إلغاء</button>
         `;
         modal.appendChild(content);
         document.body.appendChild(modal);
@@ -611,22 +754,20 @@
                         renderCurrentWeek();
                         renderSavedButtons();
                         updateWeightEvolution();
-                        alert("تم استيراد البيانات بنجاح!");
+                        alert("✅ تم استيراد البيانات بنجاح!");
                         modal.remove();
                     } else {
                         modal.remove();
                     }
                 } else {
-                    alert("البيانات غير صالحة أو غير متوافقة مع هذا التطبيق.");
+                    alert("❌ البيانات غير صالحة أو غير متوافقة.");
                     modal.remove();
                 }
             } catch(e) {
-                alert("فشل قراءة البيانات: " + e.message);
+                alert("❌ فشل قراءة البيانات: " + e.message);
                 modal.remove();
             }
-        }, (error) => {
-            // تجاهل أخطاء المسح العادية
-        });
+        }, (error) => {});
         
         document.getElementById("stopScanBtn").onclick = () => {
             if (html5QrCode.isScanning) html5QrCode.stop();
@@ -643,18 +784,20 @@
         const content = document.createElement("div"); content.className = "modal-content";
         content.innerHTML = `
             <h3><i class="fas fa-sliders-h"></i> الإعدادات</h3>
-            <div style="display: flex; flex-direction: column; gap: 15px; margin: 20px 0;">
-                <button id="exportQRBtn" style="background:#2a3a2a; border:none; padding:10px; border-radius:40px; color:#b3ffb0; cursor:pointer;">
-                    <i class="fas fa-download"></i> تصدير البيانات إلى QR
-                </button>
-                <button id="importQRBtn" style="background:#2a3a2a; border:none; padding:10px; border-radius:40px; color:#b3ffb0; cursor:pointer;">
-                    <i class="fas fa-upload"></i> استيراد البيانات من QR (مسح)
-                </button>
+            <div class="setting-buttons-group">
+                <button id="exportJSONBtn" class="setting-btn"><i class="fas fa-download"></i> 📋 تصدير JSON (نسخ)</button>
+                <button id="importJSONBtn" class="setting-btn"><i class="fas fa-upload"></i> 📄 استيراد JSON (لصق)</button>
+                <hr>
+                <button id="exportQRBtn" class="setting-btn"><i class="fas fa-qrcode"></i> تصدير إلى QR</button>
+                <button id="importQRBtn" class="setting-btn"><i class="fas fa-camera"></i> استيراد من QR (كاميرا)</button>
             </div>
-            <button id="closeSettingsBtn">إغلاق</button>
+            <button id="closeSettingsBtn" class="setting-btn danger-btn">إغلاق</button>
         `;
         modal.appendChild(content);
         document.body.appendChild(modal);
+        
+        document.getElementById("exportJSONBtn").onclick = () => { modal.remove(); exportToJSON(); };
+        document.getElementById("importJSONBtn").onclick = () => { modal.remove(); importFromJSON(); };
         document.getElementById("exportQRBtn").onclick = () => { modal.remove(); exportToQR(); };
         document.getElementById("importQRBtn").onclick = () => { modal.remove(); importFromQR(); };
         document.getElementById("closeSettingsBtn").onclick = () => modal.remove();
@@ -662,13 +805,11 @@
 
     // ------------------- بدء التشغيل -------------------
     async function init() {
-        // طلب التخزين الدائم
         if (navigator.storage && navigator.storage.persist) {
             const isPersisted = await navigator.storage.persisted();
             if (!isPersisted) {
                 const granted = await navigator.storage.persist();
                 if (granted) console.log("تم منح التخزين الدائم.");
-                else console.log("لم يتم منح التخزين الدائم.");
             }
         }
         await loadCollapseState();
